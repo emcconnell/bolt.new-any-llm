@@ -100,6 +100,16 @@ $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoi
 Register-ScheduledTask -Action $action -Trigger $trigger -Principal $principal -Settings $settings -TaskName "SyncProjectTask" -Description "Sync the /home/project directory with a local directory"
 ```
 
+### Referencing the WebContainer in the .ps1 Script
+
+To reference the WebContainer in the `sync_project.ps1` script, you can use the path `/home/project` as the source directory. This path points to the `~/projects` directory in the WebContainer environment. When running the script, make sure to specify this path as the source directory.
+
+For example:
+
+```powershell
+.\sync_project.ps1 -sourceDir "/home/project" -targetDir "C:\path\to\target\directory"
+```
+
 ## Available Scripts
 
 - `pnpm run dev`: Starts the development server.
