@@ -267,6 +267,26 @@ export class WorkbenchStore {
     artifact.runner.runAction(data);
   }
 
+  async syncChanges() {
+    const webcontainer = await this.#webcontainer;
+
+    try {
+      const pullProcess = await webcontainer.spawn('git', ['-C', '/home/projects', 'pull']);
+      await pullProcess.exit;
+
+      const addProcess = await webcontainer.spawn('git', ['-C', '/home/projects', 'add', '.']);
+      await addProcess.exit;
+
+      const commitProcess = await webcontainer.spawn('git', ['-C', '/home/projects', 'commit', '-m', 'Sync changes']);
+      await commitProcess.exit;
+
+      const pushProcess = await webcontainer.spawn('git', ['-C', '/home/projects', 'push']);
+      await pushProcess.exit;
+    } catch (error) {
+      console.error('Failed to sync changes:', error);
+    }
+  }
+
   #getArtifact(id: string) {
     const artifacts = this.artifacts.get();
     return artifacts[id];
