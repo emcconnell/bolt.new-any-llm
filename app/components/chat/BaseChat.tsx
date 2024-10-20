@@ -1,5 +1,3 @@
-// @ts-nocheck
-// Preventing TS checks with files presented in the video for a better presentation.
 import type { Message } from 'ai';
 import React, { type RefCallback } from 'react';
 import { ClientOnly } from 'remix-utils/client-only';
@@ -40,6 +38,8 @@ interface BaseChatProps {
   sendMessage?: (event: React.UIEvent, messageInput?: string) => void;
   handleInputChange?: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
   enhancePrompt?: () => void;
+  handleGitInit?: () => void;
+  handleGitClone?: () => void;
 }
 
 export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
@@ -61,6 +61,8 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
       handleInputChange,
       enhancePrompt,
       handleStop,
+      handleGitInit,
+      handleGitClone,
     },
     ref,
   ) => {
@@ -123,6 +125,20 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                       </option>
                     ))}
                   </select>
+                </div>
+                <div className="mb-2 flex gap-2">
+                  <button
+                    onClick={handleGitInit}
+                    className="w-full p-2 rounded-lg border border-bolt-elements-borderColor bg-bolt-elements-prompt-background text-bolt-elements-textPrimary focus:outline-none"
+                  >
+                    Initialize Git Repository
+                  </button>
+                  <button
+                    onClick={handleGitClone}
+                    className="w-full p-2 rounded-lg border border-bolt-elements-borderColor bg-bolt-elements-prompt-background text-bolt-elements-textPrimary focus:outline-none"
+                  >
+                    Clone Git Repository
+                  </button>
                 </div>
                 <div
                   className={classNames(
