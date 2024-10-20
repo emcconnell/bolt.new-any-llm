@@ -70,6 +70,36 @@ By default, Anthropic, OpenAI, Groq, and Ollama are implemented as providers, bu
 
 When you add a new model to the MODEL_LIST array, it will immediately be available to use when you run the app locally or reload it. For Ollama models, make sure you have the model installed already before trying to use it here!
 
+## Using the sync_project.ps1 Script
+
+You can use the `sync_project.ps1` script to sync the `/project` directory with a local directory on your host PC. This script uses `robocopy` to copy files between the WebContainer and your local directory. You can also automate this process using a scheduled task.
+
+### Running the Script Manually
+
+1. Open PowerShell as an administrator.
+2. Navigate to the directory where the `sync_project.ps1` script is located.
+3. Run the script with the following command, replacing the paths with your source and target directories:
+
+```powershell
+.\sync_project.ps1 -sourceDir "C:\path\to\source\directory" -targetDir "C:\path\to\target\directory"
+```
+
+### Setting Up a Scheduled Task
+
+To automate the sync process, you can set up a scheduled task that runs the `sync_project.ps1` script daily at a specified time.
+
+1. Open PowerShell as an administrator.
+2. Run the following command to create a scheduled task that runs the script daily at 3 AM:
+
+```powershell
+$action = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument "-File `"$PSScriptRoot\sync_project.ps1`""
+$trigger = New-ScheduledTaskTrigger -Daily -At 3am
+$principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccount -RunLevel Highest
+$settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable
+
+Register-ScheduledTask -Action $action -Trigger $trigger -Principal $principal -Settings $settings -TaskName "SyncProjectTask" -Description "Sync the /project directory with a local directory"
+```
+
 ## Available Scripts
 
 - `pnpm run dev`: Starts the development server.
