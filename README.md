@@ -72,7 +72,7 @@ When you add a new model to the MODEL_LIST array, it will immediately be availab
 
 ## Using the sync_project.ps1 Script
 
-You can use the `sync_project.ps1` script to sync the `/project` directory with a local directory on your host PC. This script uses `robocopy` to copy files between the WebContainer and your local directory. You can also automate this process using a scheduled task.
+You can use the `sync_project.ps1` script to sync the `/home/project` directory with a local directory on your host PC. This script uses `robocopy` to copy files between the WebContainer and your local directory. You can also automate this process using a scheduled task.
 
 ### Running the Script Manually
 
@@ -97,7 +97,7 @@ $trigger = New-ScheduledTaskTrigger -Daily -At 3am
 $principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccount -RunLevel Highest
 $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable
 
-Register-ScheduledTask -Action $action -Trigger $trigger -Principal $principal -Settings $settings -TaskName "SyncProjectTask" -Description "Sync the /project directory with a local directory"
+Register-ScheduledTask -Action $action -Trigger $trigger -Principal $principal -Settings $settings -TaskName "SyncProjectTask" -Description "Sync the /home/project directory with a local directory"
 ```
 
 ## Available Scripts
