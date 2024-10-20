@@ -24,8 +24,13 @@ if (!import.meta.env.SSR) {
       .then(() => {
         return WebContainer.boot({ workdirName: WORK_DIR_NAME });
       })
-      .then((webcontainer) => {
+      .then(async (webcontainer) => {
         webcontainerContext.loaded = true;
+
+        // Ensure git is installed
+        const installProcess = await webcontainer.spawn('apk', ['add', 'git']);
+        await installProcess.exit;
+
         return webcontainer;
       });
 

@@ -2,6 +2,7 @@ import { useStore } from '@nanostores/react';
 import { chatStore } from '~/lib/stores/chat';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { classNames } from '~/utils/classNames';
+import { IconButton } from '~/components/ui/IconButton';
 
 interface HeaderActionButtonsProps {}
 
@@ -39,6 +40,13 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
           <div className="i-ph:code-bold" />
         </Button>
       </div>
+      <IconButton
+        icon="i-ph:git-branch"
+        title="Sync Changes"
+        onClick={() => {
+          workbenchStore.syncChanges();
+        }}
+      />
     </div>
   );
 }
