@@ -11,6 +11,13 @@ import { PreviewsStore } from './previews';
 import { TerminalStore } from './terminal';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
+import * as git from 'isomorphic-git';
+import * as fs from '@isomorphic-git/lightning-fs';
+
+const lightningFS = new fs.default('fs');
+const pfs = lightningFS.promises;
+const dir = '/home/project';
+const gitdir = `${dir}/.git`;
 
 export interface ArtifactState {
   id: string;
@@ -302,6 +309,83 @@ export class WorkbenchStore {
 
     const content = await zip.generateAsync({ type: 'blob' });
     saveAs(content, 'project.zip');
+  }
+
+  async initRepo(): Promise<void> {
+    await this.ensureDirectoryExists(dir);
+    await this.ensureDirectoryExists(gitdir);
+    try {
+      // Log contents before initialization
+      await this.logDirectoryContents(dir);
+
+      // Check if the repository is already initialized
+      let isInitialized = false;
+      try {
+        await pfs.stat(gitdir);
+        console.log('Git repository already initialized');
+        isInitialized = true;
+      } catch (error) {
+        // Repository not initialized, continue to initialization
+      }
+
+      if (!isInitialized) {
+        // Ensure .git directory exists
+        await this.ensureDirectoryExists(gitdir);
+
+        // Initialize the repository
+        await git.init({ fs: lightningFS, dir, gitdir });
+        console.log('Git repository initialized successfully');
+      }
+
+      // Write test file
+      await this.writeTestFile();
+
+      // Log contents after initialization and file creation
+      await this.logDirectoryContents(dir);
+    } catch (error) {
+      console.error('Error initializing Git repository:', error);
+    }
+  }
+
+  async ensureDirectoryExists(path: string): Promise<void> {
+    const parts = path.split('/');
+    let currentPath = '';
+    for (const part of parts) {
+      if (part) {
+        currentPath += `/${part}`;
+        try {
+          await pfs.mkdir(currentPath);
+        } catch (error) {
+          if ((error as { code: string }).code !== 'EEXIST') {
+            throw error;
+          }
+        }
+      }
+    }
+  }
+
+  async logDirectoryContents(directory: string) {
+    try {
+      const files = await pfs.readdir(directory);
+      console.log(`Contents of ${directory}:`);
+      for (const file of files) {
+        const stats = await pfs.stat(`${directory}/${file}`);
+        console.log(`- ${file} (${stats.isDirectory() ? 'directory' : 'file'})`);
+      }
+    } catch (error) {
+      console.error(`Error reading directory ${directory}:`, error);
+    }
+  }
+
+  async writeTestFile() {
+    const filePath = `${dir}/test.txt`;
+    const content = 'hello world';
+    try {
+      await pfs.writeFile(filePath, content, 'utf8');
+      console.log(`Test file created successfully: ${filePath}`);
+    } catch (error) {
+      console.error(`Error creating test file:`, error);
+    }
   }
 }
 
