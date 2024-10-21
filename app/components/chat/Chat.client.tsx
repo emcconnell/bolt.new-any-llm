@@ -1,5 +1,5 @@
 // @ts-nocheck
-// Preventing TS checks with files presented in the video for a better presentation.
+// Preventing TS checks with files presented in the video for a better presentation.import { useStore } from '@nanostores/react';
 import { useStore } from '@nanostores/react';
 import type { Message } from 'ai';
 import { useChat } from 'ai/react';
@@ -16,12 +16,93 @@ import { cubicEasingFn } from '~/utils/easings';
 import { createScopedLogger, renderLogger } from '~/utils/logger';
 import { BaseChat } from './BaseChat';
 
+import * as git from 'isomorphic-git';
+import * as fs from '@isomorphic-git/lightning-fs';
+
 const toastAnimation = cssTransition({
   enter: 'animated fadeInRight',
   exit: 'animated fadeOutRight',
 });
 
 const logger = createScopedLogger('Chat');
+
+const lightningFS = new fs.default('fs');
+const pfs = lightningFS.promises;
+const dir = '/repo';
+const gitdir = `${dir}/.git`;
+
+async function logDirectoryContents(directory: string) {
+  try {
+    const files = await pfs.readdir(directory);
+    console.log(`Contents of ${directory}:`);
+    for (const file of files) {
+      const stats = await pfs.stat(`${directory}/${file}`);
+      console.log(`- ${file} (${stats.isDirectory() ? 'directory' : 'file'})`);
+    }
+  } catch (error) {
+    console.error(`Error reading directory ${directory}:`, error);
+  }
+}
+
+async function ensureDirectoryExists(path: string) {
+  try {
+    await pfs.mkdir(path, { recursive: true });
+    console.log(`Ensured directory exists: ${path}`);
+  } catch (error) {
+    if (error.code !== 'EEXIST') {
+      throw error;
+    }
+    console.log(`Directory already exists: ${path}`);
+  }
+}
+
+async function writeTestFile() {
+  const filePath = `${dir}/test.txt`;
+  const content = 'hello world';
+  try {
+    await pfs.writeFile(filePath, content, 'utf8');
+    console.log(`Test file created successfully: ${filePath}`);
+  } catch (error) {
+    console.error(`Error creating test file:`, error);
+  }
+}
+
+async function initRepo() {
+  try {
+    // Ensure the repository directory exists
+    await ensureDirectoryExists(dir);
+    
+    // Log contents before initialization
+    await logDirectoryContents(dir);
+
+    // Check if the repository is already initialized
+    let isInitialized = false;
+    try {
+      await pfs.access(gitdir);
+      console.log('Git repository already initialized');
+      isInitialized = true;
+    } catch (error) {
+      // Repository not initialized, continue to initialization
+    }
+
+    if (!isInitialized) {
+      // Ensure .git directory exists
+      await ensureDirectoryExists(gitdir);
+      
+      // Initialize the repository
+      await git.init({ fs: lightningFS, dir, gitdir });
+      console.log('Git repository initialized successfully');
+    }
+
+    // Write test file
+    await writeTestFile();
+
+    // Log contents after initialization and file creation
+    await logDirectoryContents(dir);
+  } catch (error) {
+    console.error('Error initializing Git repository:', error);
+  }
+}
 
 export function Chat() {
   renderLogger.trace('Chat');
@@ -95,6 +176,10 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
   const { parsedMessages, parseMessages } = useMessageParser();
 
   const TEXTAREA_MAX_HEIGHT = chatStarted ? 400 : 200;
+
+  useEffect(() => {
+    initRepo();
+  }, []);
 
   useEffect(() => {
     chatStore.setKey('started', initialMessages.length > 0);
