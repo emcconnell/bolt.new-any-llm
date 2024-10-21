@@ -311,14 +311,14 @@ export class WorkbenchStore {
     saveAs(content, 'project.zip');
   }
 
-  async initRepo(): Promise<void> {
-    await this.ensureDirectoryExists(dir);
-    await this.ensureDirectoryExists(gitdir);
+  async initRepo() {
+    const dir = '/home/project';
+    const gitdir = `${dir}/.git`;
+
     try {
-      // Log contents before initialization
+      console.log(`Initializing repository in directory: ${dir}`);
       await this.logDirectoryContents(dir);
 
-      // Check if the repository is already initialized
       let isInitialized = false;
       try {
         await pfs.stat(gitdir);
@@ -329,13 +329,35 @@ export class WorkbenchStore {
       }
 
       if (!isInitialized) {
-        // Ensure .git directory exists
-        await this.ensureDirectoryExists(gitdir);
-
-        // Initialize the repository
         await git.init({ fs: lightningFS, dir, gitdir });
         console.log('Git repository initialized successfully');
       }
+
+      // Add all files to the repository
+      const files = await pfs.readdir(dir);
+      for (const file of files) {
+        if (file !== '.git') { // Exclude .git directory
+          await git.add({ fs: lightningFS, dir, filepath: file });
+          console.log(`Added file to repository: ${file}`);
+        }
+      }
+
+      // Commit the added files
+      const commitMessage = 'Initial commit';
+      await git.commit({
+        fs: lightningFS,
+        dir,
+        author: {
+          name: 'Your Name',
+          email: 'your.email@example.com',
+        },
+        message: commitMessage,
+      });
+      console.log(`Commit created successfully with message: "${commitMessage}"`);
+
+      // Verify the status of the repository
+      const status = await git.statusMatrix({ fs: lightningFS, dir });
+      console.log('Repository status after commit:', status);
 
       // Write test file
       await this.writeTestFile();
@@ -364,27 +386,28 @@ export class WorkbenchStore {
     }
   }
 
-  async logDirectoryContents(directory: string) {
+  async logDirectoryContents(dir: string) {
     try {
-      const files = await pfs.readdir(directory);
-      console.log(`Contents of ${directory}:`);
+      const files = await pfs.readdir(dir);
+      console.log(`Contents of ${dir}:`);
       for (const file of files) {
-        const stats = await pfs.stat(`${directory}/${file}`);
-        console.log(`- ${file} (${stats.isDirectory() ? 'directory' : 'file'})`);
+        console.log(`- ${file}`);
       }
     } catch (error) {
-      console.error(`Error reading directory ${directory}:`, error);
+      console.error('Error logging directory contents:', error);
     }
   }
 
   async writeTestFile() {
+    const dir = '/home/project';
     const filePath = `${dir}/test.txt`;
-    const content = 'hello world';
+    const content = 'This is a test file.';
+
     try {
-      await pfs.writeFile(filePath, content, 'utf8');
+      await pfs.writeFile(filePath, content);
       console.log(`Test file created successfully: ${filePath}`);
     } catch (error) {
-      console.error(`Error creating test file:`, error);
+      console.error('Error writing test file:', error);
     }
   }
 }
